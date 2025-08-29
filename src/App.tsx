@@ -7,17 +7,22 @@ import Dashboard from "./pages/Dashboard";
 import Charts from "./pages/Charts";
 import Transactions from "./pages/Transactions";
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <Layout />,
+      children: [
+        { index: true, element: <Dashboard /> },
+        { path: "charts", element: <Charts /> },
+        { path: "transactions", element: <Transactions /> },
+      ],
+    },
+  ],
   {
-    path: "/",
-    element: <Layout />,
-    children: [
-      { index: true, element: <Dashboard /> },
-      { path: "charts", element: <Charts /> },
-      { path: "transactions", element: <Transactions /> },
-    ],
-  },
-]);
+    basename: import.meta.env.BASE_URL,
+  }
+);
 
 function App() {
   return <RouterProvider router={router} />;
