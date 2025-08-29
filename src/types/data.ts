@@ -1,4 +1,6 @@
 
+import type { Decimal } from 'decimal.js';
+
 // A unified interface for a single asset position.
 // It includes all possible fields from both positions_current.json and snapshots.ndjson
 export interface Position {
@@ -43,4 +45,13 @@ export interface Transaction {
   iteration_id: string;
   filters_validated: boolean;
   notes: string;
+}
+
+// From public/data/prices.ndjson
+export interface Price {
+  ts: string;
+  symbol: string;
+  price: string;
+  source: string;
+  iteration_id: string;
 }

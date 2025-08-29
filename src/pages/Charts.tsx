@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { fetchSnapshots } from '../lib/api';
+import { processTransactionData } from '../lib/processor';
 import type { Snapshot } from '../types/data';
 import {
   LineChart,
@@ -18,24 +18,29 @@ type TimeRange = '24h' | '7d' | '30d' | 'all';
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F', '#FFBB28'];
 
 export default function Charts() {
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [history, setHistory] = useState<Snapshot[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchSnapshots()
-      .then(setSnapshots)
-      .catch(err => setError(err.message));
+    processTransactionData()
+      .then(data => {
+        setHistory(data.history);
+      })
+      .catch(err => {
+        console.error(err);
+        setError(err.message);
+      });
   }, []);
 
   const allSymbols = useMemo(() => {
     const symbols = new Set<string>();
-    snapshots.forEach(s => {
+    history.forEach(s => {
       s.positions.forEach(p => symbols.add(p.symbol));
     });
     return Array.from(symbols);
-  }, [snapshots]);
+  }, [history]);
   
   useEffect(() => {
     if (allSymbols.length > 0) {
@@ -44,12 +49,12 @@ export default function Charts() {
   }, [allSymbols]);
 
   const filteredData = useMemo(() => {
-    let data = snapshots;
+    let data = history;
     if (timeRange !== 'all') {
       const now = new Date();
       const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : 30;
       const cutoff = now.setDate(now.getDate() - days);
-      data = snapshots.filter(s => new Date(s.ts).getTime() > cutoff);
+      data = history.filter(s => new Date(s.ts).getTime() > cutoff);
     }
     
     return data.map(s => {
@@ -65,7 +70,7 @@ export default function Charts() {
         return processed;
     });
 
-  }, [snapshots, timeRange]);
+  }, [history, timeRange]);
 
   const handleSymbolToggle = (symbol: string) => {
     setSelectedSymbols(prev => 
@@ -79,8 +84,8 @@ export default function Charts() {
     return <div className="text-red-500">Error loading charts: {error}</div>;
   }
 
-  if (snapshots.length === 0) {
-    return <div>Loading Chart Data...</div>;
+  if (history.length === 0) {
+    return <div>Processing Chart Data...</div>;
   }
 
   return (
@@ -117,12 +122,12 @@ export default function Charts() {
           <LineChart data={filteredData}>
             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
             <XAxis dataKey="ts" tickFormatter={(ts) => new Date(ts).toLocaleDateString()} stroke="currentColor" />
-            <YAxis yAxisId="left" tickFormatter={(value) => formatCurrency(value, snapshots[0]?.base_currency)} stroke="currentColor" />
-            <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => formatCurrency(value, snapshots[0]?.base_currency)} stroke="currentColor" />
+            <YAxis yAxisId="left" tickFormatter={(value) => formatCurrency(value, history[0]?.base_currency)} stroke="currentColor" />
+            <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => formatCurrency(value, history[0]?.base_currency)} stroke="currentColor" />
             <Tooltip
               contentStyle={{ backgroundColor: 'rgba(31, 41, 55, 0.8)', borderColor: '#4b5563' }}
               labelFormatter={(label) => formatDateTime(label)}
-              formatter={(value, name) => [formatCurrency(value as number, snapshots[0]?.base_currency), name]}
+              formatter={(value, name) => [formatCurrency(value as number, history[0]?.base_currency), name]}
             />
             <Legend />
             <Line yAxisId="left" type="monotone" dataKey="total_market_value" name="Market Value" stroke="#8884d8" dot={false} strokeWidth={2} />

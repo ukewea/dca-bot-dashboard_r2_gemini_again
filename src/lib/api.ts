@@ -1,4 +1,4 @@
-import type { CurrentPositions, Snapshot, Transaction } from '../types/data';
+import type { CurrentPositions, Price, Transaction } from '../types/data';
 
 // Construct the base path for data files respecting the deployment sub-path.
 // import.meta.env.BASE_URL is provided by Vite and corresponds to the `base` config.
@@ -31,18 +31,6 @@ export async function fetchCurrentPositions(): Promise<CurrentPositions> {
 }
 
 /**
- * Fetches the historical snapshot data.
- */
-export async function fetchSnapshots(): Promise<Snapshot[]> {
-  const response = await fetch(`${DATA_ROOT}/snapshots.ndjson`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch snapshots');
-  }
-  const text = await response.text();
-  return parseNdjson<Snapshot>(text);
-}
-
-/**
  * Fetches the transaction history data.
  */
 export async function fetchTransactions(): Promise<Transaction[]> {
@@ -52,4 +40,16 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   }
   const text = await response.text();
   return parseNdjson<Transaction>(text);
+}
+
+/**
+ * Fetches the price history data.
+ */
+export async function fetchPrices(): Promise<Price[]> {
+  const response = await fetch(`${DATA_ROOT}/prices.ndjson`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch prices');
+  }
+  const text = await response.text();
+  return parseNdjson<Price>(text);
 }
