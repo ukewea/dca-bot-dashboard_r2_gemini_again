@@ -38,7 +38,6 @@ export default function Charts() {
   }, [snapshots]);
   
   useEffect(() => {
-    // Select all symbols by default once they are loaded
     if (allSymbols.length > 0) {
       setSelectedSymbols(allSymbols);
     }
@@ -53,12 +52,12 @@ export default function Charts() {
       data = snapshots.filter(s => new Date(s.ts).getTime() > cutoff);
     }
     
-    // Process data for charting
     return data.map(s => {
         const processed: {[key: string]: any} = {
           ts: s.ts,
           total_market_value: parseFloat(s.total_market_value),
           total_quote_invested: parseFloat(s.total_quote_invested),
+          total_unrealized_pl: parseFloat(s.total_unrealized_pl),
         };
         s.positions.forEach(p => {
             processed[p.symbol] = parseFloat(p.market_value || '0');
@@ -88,7 +87,6 @@ export default function Charts() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Portfolio Charts</h2>
-        {/* Time Range Filter */}
         <div className="flex space-x-1 bg-gray-200 dark:bg-gray-700 p-1 rounded-md">
           {(['24h', '7d', '30d', 'all'] as TimeRange[]).map(range => (
             <button
@@ -102,7 +100,6 @@ export default function Charts() {
         </div>
       </div>
 
-      {/* Symbol Filter */}
       <div className="flex flex-wrap gap-2">
         {allSymbols.map(symbol => (
           <button
@@ -120,17 +117,19 @@ export default function Charts() {
           <LineChart data={filteredData}>
             <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
             <XAxis dataKey="ts" tickFormatter={(ts) => new Date(ts).toLocaleDateString()} stroke="currentColor" />
-            <YAxis tickFormatter={(value) => formatCurrency(value, snapshots[0]?.base_currency)} stroke="currentColor" />
+            <YAxis yAxisId="left" tickFormatter={(value) => formatCurrency(value, snapshots[0]?.base_currency)} stroke="currentColor" />
+            <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => formatCurrency(value, snapshots[0]?.base_currency)} stroke="currentColor" />
             <Tooltip
               contentStyle={{ backgroundColor: 'rgba(31, 41, 55, 0.8)', borderColor: '#4b5563' }}
               labelFormatter={(label) => formatDateTime(label)}
               formatter={(value, name) => [formatCurrency(value as number, snapshots[0]?.base_currency), name]}
             />
             <Legend />
-            <Line type="monotone" dataKey="total_market_value" name="Market Value" stroke="#ff7300" dot={false} strokeWidth={2} />
-            <Line type="monotone" dataKey="total_quote_invested" name="Total Invested" stroke="#387908" dot={false} strokeWidth={2} />
+            <Line yAxisId="left" type="monotone" dataKey="total_market_value" name="Market Value" stroke="#8884d8" dot={false} strokeWidth={2} />
+            <Line yAxisId="left" type="monotone" dataKey="total_quote_invested" name="Total Invested" stroke="#82ca9d" dot={false} strokeWidth={2} />
+            <Line yAxisId="right" type="monotone" dataKey="total_unrealized_pl" name="Unrealized P/L" stroke="#ffc658" dot={false} strokeWidth={2} />
             {selectedSymbols.map((symbol, index) => (
-              <Line key={symbol} type="monotone" dataKey={symbol} name={symbol} stroke={COLORS[index % COLORS.length]} dot={false} />
+              <Line yAxisId="left" key={symbol} type="monotone" dataKey={symbol} name={symbol} stroke={COLORS[index % COLORS.length]} dot={false} />
             ))}
           </LineChart>
         </ResponsiveContainer>
